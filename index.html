@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能回覆管家 - 小趙</title>
+    <title>智能客服回覆管家 - 小趙版</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -11,9 +11,7 @@
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --primary: #38bdf8;
-            --status-green: #10b981;
-            --status-yellow: #f59e0b;
-            --status-red: #ef4444;
+            --success: #10b981;
         }
 
         body {
@@ -21,19 +19,272 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
+            padding: 15px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
         }
 
         .container {
-            width: 90%;
-            max-width: 450px;
+            width: 100%;
+            max-width: 500px;
             background: var(--card-bg);
-            padding: 30px;
             border-radius: 20px;
+            padding: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* 分類按鈕區 */
+        .category-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cat-btn {
+            background: #334155;
+            color: var(--text-main);
+            border: none;
+            padding: 10px 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .cat-btn.active {
+            background: var(--primary);
+            color: #0f172a;
+        }
+
+        /* 關鍵字搜尋 */
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: var(--text-main);
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        /* 對照卡片列表 */
+        .qa-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .qa-card {
+            background: #334155;
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .guest-question {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .my-answer {
+            font-size: 16px;
+            color: var(--text-main);
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            width: 100%;
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 複製成功彈窗 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📋 客服回覆對照表</h2>
+    <div class="subtitle">點擊一鍵複製，秒回客人訊息</div>
+
+    <div class="category-container">
+        <button class="cat-btn active" onclick="filterCat('all', this)">全部常規</button>
+        <button class="cat-btn" onclick="filterCat('price', this)">價錢相關</button>
+        <button class="cat-btn" onclick="filterCat('shipping', this)">交期物流</button>
+    </div>
+
+    <input type="text" id="searchInput" class="search-box" placeholder="🔍 輸入關鍵字搜尋問答..." oninput="searchQA()">
+
+    <div class="qa-list" id="qaList">
+        </div>
+</div>
+
+<div class="toast" id="toast">📋 已複製到剪貼簿！</div>
+
+<script>
+    // 💡 這裡就是你的「對照表資料庫」，你可以自由修改裡面的文字！
+    const qaDatabase = [
+        {
+            category: "price",
+            question: "客人問：請問這個多少錢？有打折嗎？",
+            answer: "您好！這款目前原價是 $1,280，現在剛好有慶祝活動，特價只要 $980 喔！滿兩件還能享免運優惠，非常划算～"
+        },
+        {
+            category: "price",
+            question: "客人問：可以便宜一點嗎？預算不夠",
+            answer: "不好意思，因為我們的商品都是手工挑選/高成本製作，目前的價格已經是最低折扣了。不過現在下單會送您一份精美小禮物，希望您會喜歡！"
+        },
+        {
+            category: "shipping",
+            question: "客人問：現貨嗎？下單後什麼時候寄出？",
+            answer: "您好，賣場內只要能下單的都是現貨供應喔！今天下午 4 點前的訂單，我們今天晚上就會安排寄出，超商物流大約 2-3 天就會送達您指定的門市。"
+        },
+        {
+            category: "shipping",
+            question: "客人問：可以面交嗎？在哪裡？",
+            answer: "您好，目前我們暫時沒有開放面交服務，統一由超商（7-11/全家）或郵寄方式出貨，非常抱歉造成不便！"
+        },
+        {
+            category: "all",
+            question: "客人問：哈囉還在嗎？",
+            answer: "您好！不好意思讓您久等了。在線上的喔！請問有什麼我可以協助您的呢？"
+        }
+    ];
+
+    let currentCategory = 'all';
+
+    // 渲染問答列表
+    function renderList(data) {
+        const listContainer = document.getElementById('qaList');
+        listContainer.innerHTML = '';
+
+        if(data.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center;color:var(--text-muted);margin-top:20px;">找不到對應的問答組合 🥺</div>';
+            return;
+        }
+
+        data.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'qa-card';
+            card.innerHTML = `
+                <div class="guest-question">💬 ${item.question}</div>
+                <div class="my-answer" id="text_${index}">${item.answer}</div>
+                <button class="copy-btn" onclick="copyText('text_${index}')">📋 複製此回覆</button>
+            `;
+            listContainer.appendChild(card);
+        });
+    }
+
+    // 分類過濾
+    function filterCat(cat, btn) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('searchInput').value = ''; // 切換分類時清空搜尋
+        
+        if(cat === 'all') {
+            renderList(qaDatabase);
+        } else {
+            const filtered = qaDatabase.filter(item => item.category === cat);
+            renderList(filtered);
+        }
+    }
+
+    // 關鍵字搜尋
+    function searchQA() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        let sourceData = qaDatabase;
+        
+        // 如果現在有選特定分類，就在該分類內搜尋
+        if(currentCategory !== 'all') {
+            sourceData = qaDatabase.filter(item => item.category === currentCategory);
+        }
+
+        const filtered = sourceData.filter(item => 
+            item.question.toLowerCase().includes(keyword) || 
+            item.answer.toLowerCase().includes(keyword)
+        );
+        renderList(filtered);
+    }
+
+    // 一鍵複製功能
+    function copyText(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        
+        // 建立臨時輸入框來複製
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+
+        // 顯示成功提示
+        const toast = document.getElementById('toast');
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 1500);
+    }
+
+    // 網頁開啟時預載入全部資料
+    renderList(qaDatabase);
+</script>
+
+</body>
+</html>
             text-align: center;
             border: 1px solid rgba(255,255,255,0.05);
         }
