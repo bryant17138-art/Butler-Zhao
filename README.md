@@ -1,1 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能回覆管家 - 小趙</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --status-green: #10b981;
+            --status-yellow: #f59e0b;
+            --status-red: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Microsoft JhengHei";
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .avatar {
+            font-size: 64px;
+            margin-bottom: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            margin: 10px 0 5px 0;
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 狀態標籤 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        /* 營業時間面板 */
+        .time-info {
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .time-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .time-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            color: var(--text-muted);
+        }
+
+        .value {
+            font-weight: 500;
+        }
+
+        .notice {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            background: rgba(56, 189, 248, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="avatar">🤖</div>
+    <h1>智能回覆管家「趙」</h1>
+    <div class="subtitle">自動化客戶服務系統</div>
+
+    <div id="statusBadge" class="status-badge">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">系統偵測中...</span>
+    </div>
+
+    <div class="time-info">
+        <div class="time-row">
+            <span class="label">🟢 線上服務</span>
+            <span class="value">每日 10:00 - 20:00</span>
+        </div>
+        <div class="time-row">
+            <span class="label">🟡 午休充電</span>
+            <span class="value">每日 11:00 - 13:00</span>
+        </div>
+        <div class="time-row">
+            <span class="label">🔴 休眠維護</span>
+            <span class="value">其餘非服務時段</span>
+        </div>
+    </div>
+
+    <div class="notice" id="noticeText">
+        系統正即時確認管家狀態，請稍候...
+    </div>
+</div>
+
+<script>
+    function updateSystemStatus() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const currentTime = hours + (minutes / 60); // 轉為浮點數方便計算
+
+        const badge = document.getElementById('statusBadge');
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        const notice = document.getElementById('noticeText');
+
+        // 判斷邏輯
+        if (currentTime >= 10 && currentTime < 20) {
+            // 在服務時間內，檢查是否為午休 (11:00 - 13:00)
+            if (currentTime >= 11 && currentTime < 13) {
+                // 午休狀態
+                badge.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+                badge.style.color = '#fbbf24';
+                dot.style.backgroundColor = 'var(--status-yellow)';
+                text.innerText = '午休充電中 🔋';
+                notice.innerText = '💡 小趙管家目前正在補充能量，您可以先留下訊息，13:00 後將依序為您處理！';
+            } else {
+                // 正常服務
+                badge.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+                badge.style.color = '#34d399';
+                dot.style.backgroundColor = 'var(--status-green)';
+                text.innerText = '線上服務中 ⚡';
+                notice.innerText = '✨ 系統連線正常！請隨時傳送您的需求，小趙會立即為您服務。';
+            }
+        } else {
+            // 休眠狀態
+            badge.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+            badge.style.color = '#f87171';
+            dot.style.backgroundColor = 'var(--status-red)';
+            text.innerText = '夜間休眠中 🌙';
+            notice.innerText = '💤 感謝您的來訪。目前已過服務時間，本機已進入省電休眠，請於明日 10:00 後再行聯絡。';
+        }
+    }
+
+    // 初始化並每分鐘自動更新一次
+    updateSystemStatus();
+    setInterval(updateSystemStatus, 60000);
+</script>
+
+</body>
+</html>
 # Butler-Zhao
